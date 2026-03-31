@@ -6,9 +6,11 @@ const requireSubscription = async (req, res, next) => {
       .from('subscriptions')
       .select('status')
       .eq('user_id', req.userId)
-      .single();
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
 
-    if (error || !data || data.status !== 'active') {
+    if (error || !data) {
       return res.status(403).json({ message: 'Active subscription required' });
     }
 

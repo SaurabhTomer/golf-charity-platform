@@ -17,9 +17,7 @@ const ScoreCard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchScores();
-  }, []);
+  useEffect(() => { fetchScores(); }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this score?')) return;
@@ -31,54 +29,65 @@ const ScoreCard = () => {
     }
   };
 
-  if (loading) return <p>Loading scores...</p>;
+  if (loading) return <p className="text-gray-400">Loading scores...</p>;
 
   return (
     <div>
-      <h2>My Scores ({scores.length}/5)</h2>
-      <p style={{ color: 'gray', fontSize: '14px' }}>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xl font-bold">My Scores</h2>
+        <span className="text-sm font-semibold px-3 py-1 bg-gray-100 text-gray-600 rounded-full">
+          {scores.length}/5
+        </span>
+      </div>
+      <p className="text-sm text-gray-500 mb-6">
         Only your latest 5 scores are kept. Adding a new one removes the oldest.
       </p>
 
       {scores.length === 0 ? (
-        <p>No scores yet. Add your first score below.</p>
+        <div className="text-center py-8 text-gray-400">
+          <p className="text-4xl mb-3">⛳</p>
+          <p className="font-medium">No scores yet</p>
+          <p className="text-sm">Add your first score below</p>
+        </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #eee' }}>
-              <th style={{ padding: '8px', textAlign: 'left' }}>#</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Score</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Date Played</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scores.map((s, index) => (
-              <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '8px' }}>{index + 1}</td>
-                <td style={{ padding: '8px' }}><strong>{s.score}</strong></td>
-                <td style={{ padding: '8px' }}>{new Date(s.played_date).toLocaleDateString()}</td>
-                <td style={{ padding: '8px' }}>
-                  <button
-                    onClick={() => handleDelete(s.id)}
-                    style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    Delete
-                  </button>
-                </td>
+        <div className="overflow-hidden rounded-xl border border-gray-100">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Score</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date Played</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {scores.map((s, index) => (
+                <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-gray-400">{index + 1}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-lg font-black text-gray-900">{s.score}</span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {new Date(s.played_date).toLocaleDateString('en-IN', {
+                      day: 'numeric', month: 'short', year: 'numeric'
+                    })}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {scores.length < 5 && (
-        <ScoreForm onScoreAdded={fetchScores} />
-      )}
-
-      {scores.length === 5 && (
-        <ScoreForm onScoreAdded={fetchScores} />
-      )}
+      <ScoreForm onScoreAdded={fetchScores} />
     </div>
   );
 };
