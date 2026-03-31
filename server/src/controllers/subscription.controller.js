@@ -8,7 +8,7 @@ const PLANS = {
   yearly:  { amount: 399900, period: 'yearly' }   // ₹3999
 };
 
-// POST /api/subscriptions/create-order
+//create order
 export const createOrder = async (req, res) => {
   const { plan } = req.body;
 
@@ -17,10 +17,13 @@ export const createOrder = async (req, res) => {
   }
 
   try {
+    // Keep receipt under 40 characters
+    const receipt = `rcpt_${Date.now()}`.slice(0, 40);
+
     const order = await razorpay.orders.create({
       amount:   PLANS[plan].amount,
       currency: 'INR',
-      receipt:  `receipt_${req.userId}_${Date.now()}`,
+      receipt,
       notes: {
         user_id: req.userId,
         plan
@@ -36,6 +39,7 @@ export const createOrder = async (req, res) => {
     });
 
   } catch (err) {
+    console.log('Razorpay error:', err);
     res.status(500).json({ message: 'Could not create order' });
   }
 };

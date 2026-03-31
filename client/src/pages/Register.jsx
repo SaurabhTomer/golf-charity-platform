@@ -19,7 +19,7 @@ const Register = () => {
     try {
       const res = await registerUser({ full_name, email, password });
       login(res.data.token, res.data.user);
-      navigate('/subscribe');
+      navigate('/charities?select=true'); 
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

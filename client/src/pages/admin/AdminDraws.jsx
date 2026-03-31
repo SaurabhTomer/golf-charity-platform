@@ -22,11 +22,26 @@ const AdminDraws = () => {
 
   useEffect(() => { fetchDraws(); }, []);
 
+  const handleMonthChange = (e) => {
+    const val = e.target.value; // format: "2026-03"
+    if (!val) return;
+    // Safely append -01 to make a valid date
+    setNewDraw({ ...newDraw, draw_month: val + '-01' });
+  };
+
+  // Get the display value for the input (strip the -01)
+  const getMonthValue = () => {
+    if (!newDraw.draw_month) return '';
+    return newDraw.draw_month.slice(0, 7); // "2026-03"
+  };
+
   const handleCreate = async () => {
-    if (!newDraw.draw_month) return setMessage('Please select a draw month');
+    if (!newDraw.draw_month) {
+      return setMessage('Please select a draw month');
+    }
     try {
       await api.post('/draws', newDraw);
-      setMessage('Draw created');
+      setMessage('Draw created successfully');
       setCreating(false);
       setNewDraw({ draw_month: '', logic_type: 'random' });
       fetchDraws();
@@ -58,140 +73,148 @@ const AdminDraws = () => {
 
   return (
     <AdminLayout>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ margin: 0 }}>Draws</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-black text-gray-900">Draws</h1>
         <button
           onClick={() => setCreating(!creating)}
-          style={{
-            background: '#111', color: '#fff',
-            border: 'none', padding: '10px 20px',
-            borderRadius: '6px', cursor: 'pointer'
-          }}
+          className="px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition"
         >
           + New Draw
         </button>
       </div>
 
       {message && (
-        <p style={{ color: 'green', marginBottom: '16px', background: '#d4edda', padding: '10px', borderRadius: '6px' }}>
+        <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl mb-6">
           {message}
-        </p>
+        </div>
       )}
 
       {/* Create Draw Form */}
       {creating && (
-        <div style={{ background: '#fff', borderRadius: '8px', padding: '24px', marginBottom: '24px' }}>
-          <h3 style={{ marginTop: 0 }}>Create New Draw</h3>
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+          <h3 className="text-lg font-bold mb-5">Create New Draw</h3>
+          <div className="flex gap-4 flex-wrap items-end">
+
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Draw Month</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Draw Month
+              </label>
               <input
                 type="month"
-                value={newDraw.draw_month}
-                onChange={(e) => setNewDraw({ ...newDraw, draw_month: e.target.value + '-01' })}
-                style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
+                value={getMonthValue()}
+                onChange={handleMonthChange}
+                className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
               />
+              {newDraw.draw_month && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Selected: {newDraw.draw_month}
+                </p>
+              )}
             </div>
+
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Logic Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Logic Type
+              </label>
               <select
                 value={newDraw.logic_type}
                 onChange={(e) => setNewDraw({ ...newDraw, logic_type: e.target.value })}
-                style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
+                className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
               >
                 <option value="random">Random</option>
                 <option value="algorithmic">Algorithmic</option>
               </select>
             </div>
-            <button
-              onClick={handleCreate}
-              style={{
-                background: '#4CAF50', color: '#fff',
-                border: 'none', padding: '10px 20px',
-                borderRadius: '6px', cursor: 'pointer'
-              }}
-            >
-              Create
-            </button>
-            <button
-              onClick={() => setCreating(false)}
-              style={{
-                background: 'none', border: '1px solid #ddd',
-                padding: '10px 20px', borderRadius: '6px', cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleCreate}
+                className="px-5 py-2.5 bg-green-500 text-white text-sm font-semibold rounded-xl hover:bg-green-600 transition"
+              >
+                Create Draw
+              </button>
+              <button
+                onClick={() => {
+                  setCreating(false);
+                  setNewDraw({ draw_month: '', logic_type: 'random' });
+                }}
+                className="px-5 py-2.5 border border-gray-200 text-gray-500 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Draws Table */}
-      {loading ? <p>Loading draws...</p> : (
-        <div style={{ background: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {loading ? (
+        <p className="text-gray-400">Loading draws...</p>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full">
             <thead>
-              <tr style={{ background: '#f5f5f5' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px' }}>Month</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px' }}>Logic</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px' }}>Numbers</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px' }}>Status</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px' }}>Jackpot Pool</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px' }}>Actions</th>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Month</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Logic</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Numbers</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Jackpot Pool</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-50">
               {draws.map(draw => (
-                <tr key={draw.id} style={{ borderTop: '1px solid #eee' }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    {new Date(draw.draw_month).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                <tr key={draw.id} className="hover:bg-gray-50 transition-colors">
+
+                  <td className="px-5 py-4 text-sm font-medium text-gray-900">
+                    {new Date(draw.draw_month).toLocaleDateString('en-IN', {
+                      month: 'long', year: 'numeric'
+                    })}
                   </td>
-                  <td style={{ padding: '12px 16px', textTransform: 'capitalize', fontSize: '13px' }}>
-                    {draw.logic_type}
+
+                  <td className="px-5 py-4">
+                    <span className="text-xs font-semibold text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded-lg">
+                      {draw.logic_type}
+                    </span>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
+
+                  <td className="px-5 py-4">
                     {draw.numbers ? (
-                      draw.numbers.map(n => (
-                        <span key={n} style={{
-                          display: 'inline-block',
-                          background: '#111', color: '#fff',
-                          borderRadius: '50%', width: '26px', height: '26px',
-                          lineHeight: '26px', textAlign: 'center',
-                          marginRight: '4px', fontSize: '12px'
-                        }}>
-                          {n}
-                        </span>
-                      ))
+                      <div className="flex gap-1">
+                        {draw.numbers.map(n => (
+                          <span key={n} className="w-7 h-7 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {n}
+                          </span>
+                        ))}
+                      </div>
                     ) : (
-                      <span style={{ color: 'gray', fontSize: '13px' }}>Not generated</span>
+                      <span className="text-xs text-gray-400">Not generated</span>
                     )}
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      padding: '2px 8px', borderRadius: '4px', fontSize: '12px',
-                      background:
-                        draw.status === 'published' ? '#d4edda' :
-                        draw.status === 'simulated' ? '#fff3cd' : '#f5f5f5',
-                      color:
-                        draw.status === 'published' ? '#155724' :
-                        draw.status === 'simulated' ? '#856404' : '#333'
-                    }}>
+
+                  <td className="px-5 py-4">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      draw.status === 'published'
+                        ? 'bg-green-100 text-green-700'
+                        : draw.status === 'simulated'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
                       {draw.status}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
+
+                  <td className="px-5 py-4 text-sm font-bold text-gray-900">
                     ₹{draw.jackpot_pool?.toFixed(2) || '0.00'}
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+
+                  <td className="px-5 py-4">
+                    <div className="flex gap-2">
                       {draw.status === 'pending' && (
                         <button
                           onClick={() => handleSimulate(draw.id)}
-                          style={{
-                            background: '#FF9800', color: '#fff',
-                            border: 'none', padding: '4px 10px',
-                            borderRadius: '4px', cursor: 'pointer', fontSize: '13px'
-                          }}
+                          className="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition"
                         >
                           Simulate
                         </button>
@@ -200,38 +223,35 @@ const AdminDraws = () => {
                         <>
                           <button
                             onClick={() => handleSimulate(draw.id)}
-                            style={{
-                              background: '#FF9800', color: '#fff',
-                              border: 'none', padding: '4px 10px',
-                              borderRadius: '4px', cursor: 'pointer', fontSize: '13px'
-                            }}
+                            className="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition"
                           >
                             Re-simulate
                           </button>
                           <button
                             onClick={() => handlePublish(draw.id)}
-                            style={{
-                              background: '#4CAF50', color: '#fff',
-                              border: 'none', padding: '4px 10px',
-                              borderRadius: '4px', cursor: 'pointer', fontSize: '13px'
-                            }}
+                            className="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition"
                           >
                             Publish
                           </button>
                         </>
                       )}
                       {draw.status === 'published' && (
-                        <span style={{ color: 'gray', fontSize: '13px' }}>Completed</span>
+                        <span className="text-xs text-gray-400 font-medium">Completed</span>
                       )}
                     </div>
                   </td>
+
                 </tr>
               ))}
             </tbody>
           </table>
 
           {draws.length === 0 && (
-            <p style={{ textAlign: 'center', padding: '32px', color: 'gray' }}>No draws yet. Create one above.</p>
+            <div className="text-center py-16 text-gray-400">
+              <p className="text-4xl mb-3">🎯</p>
+              <p className="font-medium">No draws yet</p>
+              <p className="text-sm">Create your first draw above</p>
+            </div>
           )}
         </div>
       )}

@@ -37,10 +37,14 @@ export const generateAlgorithmicNumbers = (allScores) => {
   return result.sort((a, b) => a - b);
 };
 
+
 // Check how many numbers a user matched
 export const checkMatch = (userScores, drawNumbers) => {
-  const userNums  = userScores.map(s => s.score);
-  const matched   = userNums.filter(n => drawNumbers.includes(n));
+  const userNums = userScores.map(s => s.score);
+  console.log('User scores:', userNums);
+  console.log('Draw numbers:', drawNumbers);
+  const matched = userNums.filter(n => drawNumbers.includes(n));
+  console.log('Matched:', matched);
   return matched.length;
 };
 

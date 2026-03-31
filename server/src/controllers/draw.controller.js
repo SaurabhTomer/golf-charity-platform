@@ -77,7 +77,6 @@ export const getUserDrawResult = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 // POST /api/draws  (admin) — create a new draw
 export const createDraw = async (req, res) => {
   const { draw_month, logic_type } = req.body;
@@ -89,7 +88,13 @@ export const createDraw = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('draws')
-      .insert({ draw_month, logic_type, status: 'pending' })
+      .insert({ 
+        draw_month, 
+        logic_type, 
+        status: 'pending',
+        jackpot_pool: 0
+        // numbers is intentionally left out — set during simulate
+      })
       .select()
       .single();
 
@@ -101,7 +106,6 @@ export const createDraw = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 // POST /api/draws/:id/simulate  (admin)
 export const simulateDraw = async (req, res) => {
   const { id } = req.params;
