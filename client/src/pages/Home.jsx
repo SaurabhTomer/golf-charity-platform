@@ -95,7 +95,7 @@ const Home = () => {
       </div>
 
       {/* CTA */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-24 px-6 text-center">
+      <div className="bg-linear-to-br from-gray-900 to-gray-800 text-white py-24 px-6 text-center">
         <h2 className="text-5xl font-black mb-4">Ready to make a difference?</h2>
         <p className="text-white/60 text-lg mb-10">
           Join golfers across India supporting charities and winning prizes every month.

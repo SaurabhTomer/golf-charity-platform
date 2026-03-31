@@ -98,7 +98,7 @@ export const getAllWinners = async (req, res) => {
 // PUT /api/admin/winners/:id/verify
 export const verifyWinner = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // 'approved' or 'rejected'
+  const { status } = req.body;
 
   if (!['approved', 'rejected'].includes(status)) {
     return res.status(400).json({ message: 'Status must be approved or rejected' });
@@ -153,8 +153,9 @@ export const getAnalytics = async (req, res) => {
     ]);
 
     const totalPrizePool = winners.data?.reduce((sum, w) => sum + (w.prize_amount || 0), 0) || 0;
-    const totalPaid      = winners.data?.filter(w => w.payout_status === 'paid')
-                                       .reduce((sum, w) => sum + (w.prize_amount || 0), 0) || 0;
+    const totalPaid      = winners.data
+      ?.filter(w => w.payout_status === 'paid')
+      .reduce((sum, w) => sum + (w.prize_amount || 0), 0) || 0;
 
     res.json({
       total_users:        users.count || 0,
@@ -163,6 +164,141 @@ export const getAnalytics = async (req, res) => {
       total_prize_pool:   totalPrizePool,
       total_paid_out:     totalPaid
     });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/admin/my-winnings
+export const getMyWinnings = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('winners')
+      .select('*, draws(draw_month)')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) return res.status(400).json({ message: error.message });
+
+    res.json({ winnings: data });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/admin/users/:id/scores
+export const getAdminUserScores = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('scores')
+      .select('*')
+      .eq('user_id', id)
+      .order('created_at', { ascending: false });
+
+    if (error) return res.status(400).json({ message: error.message });
+
+    res.json({ scores: data });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/admin/users/:id/scores
+export const addAdminUserScore = async (req, res) => {
+  const { id } = req.params;
+  const { score, played_date } = req.body;
+
+  if (!score || !played_date) {
+    return res.status(400).json({ message: 'Score and date required' });
+  }
+
+  if (score < 1 || score > 45) {
+    return res.status(400).json({ message: 'Score must be between 1 and 45' });
+  }
+
+  try {
+    const { data: existing } = await supabase
+      .from('scores')
+      .select('id, created_at')
+      .eq('user_id', id)
+      .order('created_at', { ascending: true });
+
+    if (existing && existing.length >= 5) {
+      await supabase.from('scores').delete().eq('id', existing[0].id);
+    }
+
+    const { data, error } = await supabase
+      .from('scores')
+      .insert({ user_id: id, score, played_date })
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ message: error.message });
+
+    res.status(201).json({ message: 'Score added', score: data });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// DELETE /api/admin/scores/:id
+export const deleteAdminScore = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { error } = await supabase
+      .from('scores')
+      .delete()
+      .eq('id', id);
+
+    if (error) return res.status(400).json({ message: error.message });
+
+    res.json({ message: 'Score deleted' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/admin/users/:id/subscription
+export const getUserSubscription = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', id)
+      .single();
+
+    if (error || !data) return res.json({ subscribed: false });
+
+    res.json({ subscription: data });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// PUT /api/admin/users/:id/subscription/cancel
+export const cancelUserSubscription = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('user_id', id);
+
+    if (error) return res.status(400).json({ message: error.message });
+
+    res.json({ message: 'Subscription cancelled' });
 
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
