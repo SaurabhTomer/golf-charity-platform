@@ -67,8 +67,8 @@ export const getUserDrawResult = async (req, res) => {
     }
 
     res.json({
-      won:          true,
-      match_type:   data.match_type,
+      won: true,
+      match_type: data.match_type,
       prize_amount: data.prize_amount,
       payout_status: data.payout_status
     });
@@ -88,9 +88,9 @@ export const createDraw = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('draws')
-      .insert({ 
-        draw_month, 
-        logic_type, 
+      .insert({
+        draw_month,
+        logic_type,
         status: 'pending',
         jackpot_pool: 0
         // numbers is intentionally left out — set during simulate
@@ -161,11 +161,23 @@ export const publishDraw = async (req, res) => {
     if (!draw) return res.status(404).json({ message: 'Draw not found' });
     if (!draw.numbers) return res.status(400).json({ message: 'Run simulate first' });
 
-    // Get all active subscribers with their scores
+    // Get all active subscribers -- exclude admins
     const { data: subscribers } = await supabase
       .from('subscriptions')
       .select('user_id, plan')
       .eq('status', 'active');
+
+    // Filter out admin users
+    const { data: adminUsers } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'admin');
+
+    const adminIds = adminUsers?.map(a => a.id) || [];
+
+    const eligibleSubscribers = subscribers?.filter(
+      s => !adminIds.includes(s.user_id)
+    ) || [];
 
     // Calculate prize pool
     const totalPool = calculatePrizePool(subscribers || []);
@@ -200,7 +212,7 @@ export const publishDraw = async (req, res) => {
     subscribers?.forEach(sub => {
       const userScores = scoresByUser[sub.user_id] || [];
       const matchCount = checkMatch(userScores, draw.numbers);
-      const matchType  = getMatchType(matchCount);
+      const matchType = getMatchType(matchCount);
 
       if (matchType) {
         winnersByType[matchType].push(sub.user_id);
@@ -215,9 +227,9 @@ export const publishDraw = async (req, res) => {
 
       userIds.forEach(userId => {
         winnersToInsert.push({
-          draw_id:      id,
-          user_id:      userId,
-          match_type:   matchType,
+          draw_id: id,
+          user_id: userId,
+          match_type: matchType,
           prize_amount: prizePerWinner
         });
       });
@@ -234,16 +246,16 @@ export const publishDraw = async (req, res) => {
     await supabase
       .from('draws')
       .update({
-        status:       'published',
+        status: 'published',
         jackpot_pool: newJackpot,
         published_at: new Date()
       })
       .eq('id', id);
 
     res.json({
-      message:  'Draw published',
-      numbers:  draw.numbers,
-      winners:  winnersByType,
+      message: 'Draw published',
+      numbers: draw.numbers,
+      winners: winnersByType,
       pools,
       jackpot_rolled_over: newJackpot > 0
     });
